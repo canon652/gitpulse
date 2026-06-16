@@ -3,7 +3,7 @@ import ThemeToggle from '../ThemeToggle/ThemeToggle';
 
 const Header = () => (
   <header className="sticky top-0 z-10 border-b border-gray-200 dark:border-gray-800
-    bg-white/80 dark:bg-[#0d1117]/80 backdrop-blur-sm">
+    bg-white/95 dark:bg-[#0d1117]/95 backdrop-blur-md">
     <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
       <Link to="/" className="flex items-center gap-2 font-bold text-lg">
         <span className="text-indigo-500 font-mono">{'<'}</span>

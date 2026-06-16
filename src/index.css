@@ -11,3 +11,13 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Точечная сетка в стиле dev-инструментов (GitHub, Linear, Vercel) */
+.grid-bg {
+  background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.dark .grid-bg {
+  background-image: radial-gradient(circle, #30363d 1px, transparent 1px);
+}

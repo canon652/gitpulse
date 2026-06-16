@@ -6,7 +6,7 @@ const ProfileCard = ({ user }) => (
     bg-white dark:bg-[#161b22] border border-gray-200 dark:border-gray-800 mb-4">
     <div className="flex-shrink-0">
       <img
-        src={user.avatar_url}
+        src={`${user.avatar_url}&s=224`}
         alt={`Аватар ${user.login}`}
         className="w-28 h-28 rounded-full ring-2 ring-indigo-500/30 mx-auto sm:mx-0"
       />

@@ -8,11 +8,14 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
-  Cell,
+  CartesianGrid,
 } from 'recharts';
 import { useGitHubUser } from '../hooks/useGitHubUser';
 import ProfileCard from '../components/ProfileCard/ProfileCard';
 import { ProfileSkeleton } from '../components/Skeleton/Skeleton';
+
+const COLOR_A = '#6366f1';
+const COLOR_B = '#f59e0b';
 
 const MiniSearch = ({ label, onSearch }) => {
   const [value, setValue] = useState('');
@@ -49,50 +52,74 @@ const CompareBar = ({ dataA, dataB, usernameA, usernameB }) => {
   const totalStars = (repos) =>
     repos.reduce((sum, r) => sum + r.stargazers_count, 0);
 
-  const chartData = [
-    {
-      name: 'Репозитории',
+  // Сохраняем реальные значения для тултипа
+  const realValues = {
+    'Репозитории': {
       [usernameA]: dataA.user.public_repos,
       [usernameB]: dataB.user.public_repos,
     },
-    {
-      name: 'Подписчики',
+    'Подписчики': {
       [usernameA]: dataA.user.followers,
       [usernameB]: dataB.user.followers,
     },
-    {
-      name: 'Подписки',
+    'Подписки': {
       [usernameA]: dataA.user.following,
       [usernameB]: dataB.user.following,
     },
-    {
-      name: 'Звёзды',
+    'Звёзды': {
       [usernameA]: totalStars(dataA.repos),
       [usernameB]: totalStars(dataB.repos),
     },
+  };
+
+  // Лог-шкала не может показать 0 — заменяем на 1 только для отображения
+  const safe = (v) => Math.max(v, 1);
+
+  const chartData = [
+    {
+      name: 'Репозитории',
+      [usernameA]: safe(dataA.user.public_repos),
+      [usernameB]: safe(dataB.user.public_repos),
+    },
+    {
+      name: 'Подписчики',
+      [usernameA]: safe(dataA.user.followers),
+      [usernameB]: safe(dataB.user.followers),
+    },
+    {
+      name: 'Подписки',
+      [usernameA]: safe(dataA.user.following),
+      [usernameB]: safe(dataB.user.following),
+    },
+    {
+      name: 'Звёзды',
+      [usernameA]: safe(totalStars(dataA.repos)),
+      [usernameB]: safe(totalStars(dataB.repos)),
+    },
   ];
 
+  // Тултип показывает реальные значения, а не log-значения
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (!active || !payload?.length) return null;
+    return (
+      <div className="px-3 py-2 rounded-lg bg-white dark:bg-[#161b22]
+        border border-gray-200 dark:border-gray-700 text-sm shadow-lg">
+        <p className="font-medium text-gray-900 dark:text-white mb-1">{label}</p>
+        {payload.map((p) => (
+          <p key={p.dataKey} style={{ color: p.fill }}>
+            @{p.dataKey}:{' '}
+            {(realValues[label]?.[p.dataKey] ?? 0).toLocaleString('ru-RU')}
+          </p>
+        ))}
+      </div>
+    );
+  };
+
   const tableRows = [
-    {
-      label: 'Репозитории',
-      a: dataA.user.public_repos,
-      b: dataB.user.public_repos,
-    },
-    {
-      label: 'Подписчики',
-      a: dataA.user.followers,
-      b: dataB.user.followers,
-    },
-    {
-      label: 'Подписки',
-      a: dataA.user.following,
-      b: dataB.user.following,
-    },
-    {
-      label: 'Суммарно звёзд',
-      a: totalStars(dataA.repos),
-      b: totalStars(dataB.repos),
-    },
+    { label: 'Репозитории', a: dataA.user.public_repos, b: dataB.user.public_repos },
+    { label: 'Подписчики', a: dataA.user.followers, b: dataB.user.followers },
+    { label: 'Подписки', a: dataA.user.following, b: dataB.user.following },
+    { label: 'Суммарно звёзд', a: totalStars(dataA.repos), b: totalStars(dataB.repos) },
   ];
 
   return (
@@ -107,10 +134,10 @@ const CompareBar = ({ dataA, dataB, usernameA, usernameB }) => {
             <thead>
               <tr className="text-gray-500 dark:text-gray-500">
                 <th className="text-left pb-3 font-medium">Метрика</th>
-                <th className="text-right pb-3 font-mono font-medium text-indigo-500">
+                <th className="text-right pb-3 font-mono font-medium" style={{ color: COLOR_A }}>
                   @{usernameA}
                 </th>
-                <th className="text-right pb-3 font-mono font-medium text-violet-500">
+                <th className="text-right pb-3 font-mono font-medium" style={{ color: COLOR_B }}>
                   @{usernameB}
                 </th>
               </tr>
@@ -120,20 +147,17 @@ const CompareBar = ({ dataA, dataB, usernameA, usernameB }) => {
                 const aWins = row.a >= row.b;
                 const bWins = row.b >= row.a;
                 return (
-                  <tr
-                    key={row.label}
-                    className="border-t border-gray-100 dark:border-gray-800"
-                  >
-                    <td className="py-2.5 text-gray-600 dark:text-gray-400">
-                      {row.label}
-                    </td>
+                  <tr key={row.label} className="border-t border-gray-100 dark:border-gray-800">
+                    <td className="py-2.5 text-gray-600 dark:text-gray-400">{row.label}</td>
                     <td
-                      className={`py-2.5 text-right font-mono ${aWins ? 'font-bold text-indigo-500' : 'text-gray-500 dark:text-gray-500'}`}
+                      className={`py-2.5 text-right font-mono ${aWins ? 'font-bold' : 'text-gray-500 dark:text-gray-500'}`}
+                      style={aWins ? { color: COLOR_A } : {}}
                     >
                       {row.a.toLocaleString('ru-RU')}
                     </td>
                     <td
-                      className={`py-2.5 text-right font-mono ${bWins ? 'font-bold text-violet-500' : 'text-gray-500 dark:text-gray-500'}`}
+                      className={`py-2.5 text-right font-mono ${bWins ? 'font-bold' : 'text-gray-500 dark:text-gray-500'}`}
+                      style={bWins ? { color: COLOR_B } : {}}
                     >
                       {row.b.toLocaleString('ru-RU')}
                     </td>
@@ -150,26 +174,33 @@ const CompareBar = ({ dataA, dataB, usernameA, usernameB }) => {
         <h3 className="text-sm uppercase tracking-widest text-gray-500 dark:text-gray-600 mb-4">
           Диаграмма сравнения
         </h3>
-        <ResponsiveContainer width="100%" height={240}>
+        <ResponsiveContainer width="100%" height={280}>
           <BarChart data={chartData} barGap={4}>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
             <XAxis
               dataKey="name"
               tick={{ fontSize: 12, fill: '#6b7280' }}
               axisLine={false}
               tickLine={false}
             />
-            <YAxis hide />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: 'var(--tooltip-bg, #fff)',
-                border: '1px solid #e5e7eb',
-                borderRadius: 8,
-                fontSize: 12,
-              }}
+            {/* Логарифмическая шкала — решает проблему несопоставимых значений */}
+            <YAxis
+              scale="log"
+              domain={[1, 'auto']}
+              allowDataOverflow
+              tick={{ fontSize: 11, fill: '#6b7280' }}
+              axisLine={false}
+              tickLine={false}
+              width={40}
             />
-            <Legend formatter={(v) => <span className="text-xs">@{v}</span>} />
-            <Bar dataKey={usernameA} fill="#6366f1" radius={[4, 4, 0, 0]} />
-            <Bar dataKey={usernameB} fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend
+              formatter={(v) => (
+                <span className="text-xs text-gray-600 dark:text-gray-400">@{v}</span>
+              )}
+            />
+            <Bar dataKey={usernameA} fill={COLOR_A} radius={[4, 4, 0, 0]} />
+            <Bar dataKey={usernameB} fill={COLOR_B} radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -192,7 +223,9 @@ const UserColumn = ({ result, label }) => {
     return (
       <div className="flex-1 min-w-0 rounded-2xl border border-red-200 dark:border-red-900/40
         bg-red-50 dark:bg-red-900/10 p-4 text-center">
-        <p className="text-red-500 text-sm">{error === 'rate_limit' ? 'Лимит исчерпан' : error}</p>
+        <p className="text-red-500 text-sm">
+          {error === 'rate_limit' ? 'Лимит исчерпан' : error}
+        </p>
       </div>
     );
   if (!data) return <Placeholder label={label} />;
